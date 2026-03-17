@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "WorkOS AuthKit integration for React Native — OAuth 2.0 PKCE auth with token storage, session restoration, and automatic refresh",
   "license": "MIT",
+  "packageManager": "pnpm@10.28.1",
   "type": "module",
   "exports": {
     ".": {
@@ -26,7 +27,14 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "type-check": "tsc --noEmit",
+    "prepare": "simple-git-hooks",
     "prepublishOnly": "tsup"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*": "prettier --write --ignore-unknown"
   },
   "repository": {
     "type": "git",
@@ -60,8 +68,10 @@
     "expo-auth-session": "^55.0.7",
     "expo-secure-store": "^55.0.8",
     "expo-web-browser": "^55.0.9",
+    "lint-staged": "^16.1.0",
     "prettier": "^3.8.1",
     "react": "^19.2.0",
+    "simple-git-hooks": "^2.13.0",
     "tsup": "^8.4.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.0",
