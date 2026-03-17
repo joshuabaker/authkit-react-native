@@ -1,6 +1,6 @@
 {
   "name": "authkit-react-native",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "WorkOS AuthKit integration for React Native — OAuth 2.0 PKCE auth with token storage, session restoration, and automatic refresh",
   "license": "MIT",
   "packageManager": "pnpm@10.28.1",
