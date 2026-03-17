@@ -6,7 +6,11 @@
       "Bash(npm pack:*)",
       "Bash(npm list:*)",
       "Bash(pnpm:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git config:*)",
+      "Bash(pnpx publint:*)",
+      "Bash(pnpx:*)",
+      "Bash(git status:*)"
     ]
   }
 }
