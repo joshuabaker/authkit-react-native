@@ -20,3 +20,5 @@ jobs:
       - run: pnpm type-check
       - run: pnpm format:check
       - run: pnpm test:coverage
+      - run: pnpx publint
+      - run: pnpx @arethetypeswrong/cli --pack
