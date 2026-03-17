@@ -1,0 +1,70 @@
+{
+  "name": "authkit-react-native",
+  "version": "0.0.0",
+  "description": "WorkOS AuthKit integration for React Native — OAuth 2.0 PKCE auth with token storage, session restoration, and automatic refresh",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "tsup"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joshuabaker/authkit-react-native.git"
+  },
+  "homepage": "https://github.com/joshuabaker/authkit-react-native#readme",
+  "bugs": {
+    "url": "https://github.com/joshuabaker/authkit-react-native/issues"
+  },
+  "keywords": [
+    "workos",
+    "authkit",
+    "react-native",
+    "expo",
+    "oauth",
+    "pkce",
+    "authentication",
+    "zustand"
+  ],
+  "peerDependencies": {
+    "@react-native-async-storage/async-storage": ">=2",
+    "expo-auth-session": ">=5",
+    "expo-secure-store": ">=13",
+    "expo-web-browser": ">=13",
+    "react": ">=18",
+    "zustand": ">=4"
+  },
+  "devDependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "expo-auth-session": "^55.0.7",
+    "expo-secure-store": "^55.0.8",
+    "expo-web-browser": "^55.0.9",
+    "prettier": "^3.8.1",
+    "react": "^19.2.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.0",
+    "zustand": "^5.0.12"
+  }
+}
