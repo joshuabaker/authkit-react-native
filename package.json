@@ -71,7 +71,7 @@
   "devDependencies": {
     "@changesets/changelog-github": "^0.6.0",
     "@changesets/cli": "^2.30.0",
-    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-async-storage/async-storage": "^3.0.1",
     "@vitest/coverage-v8": "^4.1.0",
     "expo-auth-session": "^55.0.7",
     "expo-secure-store": "^55.0.8",
