@@ -1,8 +1,11 @@
 # AuthKit for React Native
 
-WorkOS AuthKit integration for React Native. Handles the full OAuth 2.0 PKCE flow, token storage, automatic session restoration, and token refresh — built on Zustand and Expo modules.
+WorkOS AuthKit integration for React Native, built on Zustand and Expo modules.
 
-For server-side auth proxy examples (Hono, Next.js), see the [`examples/`](examples/) directory.
+- 🔒 Secure token storage (Keychain/Keystore)
+- 🔄 Automatic session restoration and token refresh
+- 🔏 PKCE for added security
+- 🧩 Zustand-based — no nested providers or layouts required
 
 ## Installation
 
@@ -10,7 +13,7 @@ For server-side auth proxy examples (Hono, Next.js), see the [`examples/`](examp
 npx expo install authkit-react-native zustand expo-auth-session expo-secure-store expo-web-browser @react-native-async-storage/async-storage
 ```
 
-## Client Usage
+## Usage
 
 ### Create the hook
 
@@ -22,9 +25,10 @@ import { createAuthStore } from "authkit-react-native";
 import { useStore } from "zustand";
 
 const authStore = createAuthStore({
-  authorizationEndpoint: `${process.env.EXPO_PUBLIC_API_URL}/v1/auth/authorize`,
-  tokenEndpoint: `${process.env.EXPO_PUBLIC_API_URL}/v1/auth/token`,
-  revocationEndpoint: `${process.env.EXPO_PUBLIC_API_URL}/v1/auth/revoke`,
+  // Provide authorizationEndpoint or clientId
+  authorizationEndpoint: "https://api.example.com/v1/auth/authorize",
+  tokenEndpoint: "https://api.example.com/v1/auth/token",
+  revocationEndpoint: "https://api.example.com/v1/auth/revoke",
 });
 
 export function useAuth() {
@@ -34,20 +38,32 @@ export function useAuth() {
 
 ### Protected routes
 
-Because the store lives outside React, there's no provider to wrap your app in. Just call `useAuth()` in a layout to gate routes while the session is loading:
+Use `Stack.Protected` to gate routes based on auth state. Because the store lives outside React, there's no provider to wrap your app in — just call `useAuth()` in your root layout.
+
+> Requires Expo SDK 53+ (Expo Router v5).
 
 ```tsx
-// app/(auth)/_layout.tsx
+// app/_layout.tsx
 import { useAuth } from "@/hooks/useAuth";
-import { Redirect, Stack } from "expo-router";
+import { Loading } from "@/components/Loading";
+import { Stack } from "expo-router";
 
-export default function AuthLayout() {
+export default function RootLayout() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) return <Loading />;
-  if (!user) return <Redirect href="/sign-in" />;
 
-  return <Stack />;
+  return (
+    <Stack>
+      <Stack.Protected guard={!user}>
+        <Stack.Screen name="sign-in" />
+      </Stack.Protected>
+
+      <Stack.Protected guard={!!user}>
+        <Stack.Screen name="(app)" />
+      </Stack.Protected>
+    </Stack>
+  );
 }
 ```
 
@@ -86,9 +102,7 @@ function SignOutButton() {
 
   const handleSignOut = () => {
     Alert.alert(
-      user?.email
-        ? `Are you sure you want to sign out as ${user.email}?`
-        : "Are you sure you want to sign out?",
+      `Are you sure you want to sign out as ${user.email}?`,
       undefined,
       [
         { text: "Cancel", style: "cancel" },
@@ -101,23 +115,6 @@ function SignOutButton() {
 }
 ```
 
-## Bare React Native (without Expo)
-
-This package is built around Expo modules but works in any React Native app. Expo packages can be used in bare React Native projects by adding the Expo modules runtime:
-
-1. Install the `expo` package:
-   ```bash
-   npm install expo
-   npx install-expo-modules
-   ```
-2. Install the peer dependencies using `npx expo install` (handles native linking):
-   ```bash
-   npx expo install expo-auth-session expo-secure-store expo-web-browser @react-native-async-storage/async-storage zustand
-   ```
-3. Ensure your app's URL scheme is configured for the OAuth redirect. In `app.json` or your native project's `Info.plist` / `AndroidManifest.xml`, register a deep link scheme (e.g., `myapp://`).
-
-After that, usage is identical to the examples above.
-
 ## Configuration
 
 | Option                  | Required | Default             | Description                                                               |
@@ -129,3 +126,11 @@ After that, usage is identical to the examples above.
 | `redirectUri`           | No       | `makeRedirectUri()` | OAuth redirect URI.                                                       |
 | `storageKeyPrefix`      | No       | `"workos"`          | Prefix for SecureStore/AsyncStorage keys.                                 |
 | `devMode`               | No       | `false`             | Logs errors to the console when enabled.                                  |
+
+## Examples
+
+See the [`examples/`](examples/) directory for complete, copy-paste-ready projects:
+
+- **[Expo](examples/expo/)** — Minimal client app with `useAuth` hook
+- **[Hono](examples/hono/)** — Auth proxy server on Cloudflare Workers
+- **[Next.js](examples/nextjs/)** — Auth proxy server with App Router route handlers
