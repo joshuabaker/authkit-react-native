@@ -28,7 +28,7 @@ importers:
         version: 55.0.11(expo@55.0.7)
       expo-web-browser:
         specifier: ^55.0.9
-        version: 55.0.10(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))
+        version: 55.0.12(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))
       lint-staged:
         specifier: ^16.1.0
         version: 16.4.0
@@ -2064,8 +2064,8 @@ packages:
     resolution: {integrity: sha512-Cc1btFyPsD9P4DT2xd1pG/uR96TLVMx0W+dPm9Gjk1uDV9xuzvMcUsY7nf9bt4U5pGyWWkCXmPJcKwWfdl51Pw==}
     engines: {node: '>=20.16.0'}
 
-  expo-web-browser@55.0.10:
-    resolution: {integrity: sha512-2d6qVrg/nt0JvW5uAqOMDG/xITIXFe1Prkq1ri+I3PrC0QmV5cMYNSagU9ykfC8S7YKWxF1qO7Qsih9fxNa9dw==}
+  expo-web-browser@55.0.12:
+    resolution: {integrity: sha512-fMmDx/belJ7oW3+Ee7LbPMYKWxQlRYY/JXWFkQ72Zm1cg9Fmxzcu8iSu8gzdvjViM3B545PPv3src5TWq9qDdA==}
     peerDependencies:
       expo: '*'
       react-native: '*'
@@ -6041,7 +6041,7 @@ snapshots:
       expo-constants: 55.0.9(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(typescript@5.9.3)
       expo-crypto: 55.0.10(expo@55.0.7)
       expo-linking: 55.0.9(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
-      expo-web-browser: 55.0.10(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))
+      expo-web-browser: 55.0.12(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))
       invariant: 2.2.4
       react: 19.2.4
       react-native: 0.84.1(@babel/core@7.29.0)(react@19.2.4)
@@ -6124,7 +6124,7 @@ snapshots:
 
   expo-server@55.0.7: {}
 
-  expo-web-browser@55.0.10(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4)):
+  expo-web-browser@55.0.12(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4)):
     dependencies:
       expo: 55.0.7(@babel/core@7.29.0)(@expo/dom-webview@55.0.3)(react-native@0.84.1(@babel/core@7.29.0)(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       react-native: 0.84.1(@babel/core@7.29.0)(react@19.2.4)
