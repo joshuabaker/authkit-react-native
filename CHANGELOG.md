@@ -1,5 +1,11 @@
 # authkit-react-native
 
+## 0.1.2
+
+### Patch Changes
+
+- [#38](https://github.com/joshuabaker/authkit-react-native/pull/38) [`b802d8e`](https://github.com/joshuabaker/authkit-react-native/commit/b802d8e20395dfbc7206b6b31e423af92c00b686) Thanks [@joshuabaker](https://github.com/joshuabaker)! - Publish to npm via OIDC trusted publishing (tokenless). No runtime or API changes.
+
 ## 0.1.1
 
 ### Patch Changes
