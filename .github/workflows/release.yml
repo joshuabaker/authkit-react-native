@@ -25,6 +25,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
+      # Trusted publishing requires npm >= 11.5.1; Node 22's bundled npm is 10.x
+      - run: npm install -g npm@latest
+
       - name: Create release PR or publish
         uses: changesets/action@v1
         with:
