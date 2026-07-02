@@ -75,7 +75,7 @@
     "@vitest/coverage-v8": "^4.1.0",
     "expo-auth-session": "^55.0.7",
     "expo-secure-store": "^57.0.0",
-    "expo-web-browser": "^55.0.9",
+    "expo-web-browser": "^57.0.0",
     "lint-staged": "^17.0.8",
     "prettier": "^3.8.1",
     "react": "^19.2.0",

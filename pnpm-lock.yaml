@@ -27,8 +27,8 @@ importers:
         specifier: ^57.0.0
         version: 57.0.0(expo@55.0.7)
       expo-web-browser:
-        specifier: ^55.0.9
-        version: 55.0.15(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.7)(react@19.2.6))
+        specifier: ^57.0.0
+        version: 57.0.0(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.7)(react@19.2.6))
       lint-staged:
         specifier: ^17.0.8
         version: 17.0.8
@@ -2091,8 +2091,14 @@ packages:
     resolution: {integrity: sha512-AxRdHqcv0H1g4s923vu+5n1Nrhne23bjXbP+Vl7+Lwfpe7MG9PuU1IS95IJK6a+7BVV1mRN6QlZvs8Yv7EEXNQ==}
     engines: {node: '>=20.16.0'}
 
-  expo-web-browser@55.0.15:
-    resolution: {integrity: sha512-6hwZQob3EF+RWwZ+IvWLZjj2wI1frqx21+m/uzBqdUEHUhp2cVJi7kmxDolDmrve+ZldryZi1qfN78ALdvjHSA==}
+  expo-web-browser@55.0.17:
+    resolution: {integrity: sha512-iquFeEBGQMB10lfg0DtXMOGlBt0D3zCQsOTn9fJJXpQ3lHT6U2sRg8/Ed91OJGMkNSpr74TNRYO8XPJWmnjJ6Q==}
+    peerDependencies:
+      expo: '*'
+      react-native: '*'
+
+  expo-web-browser@57.0.0:
+    resolution: {integrity: sha512-J+kQAqbH423Ge6YXrQTVKkmH+cS2SSjnc7ocoRDjhmfZ2+XSBXX3Ogds5/aEKjNKUe7ObtPMkVq9uWbXJv4BGw==}
     peerDependencies:
       expo: '*'
       react-native: '*'
@@ -6095,7 +6101,7 @@ snapshots:
       expo-constants: 55.0.15(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.7)(react@19.2.6))
       expo-crypto: 55.0.14(expo@55.0.7)
       expo-linking: 55.0.14(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.7)(react@19.2.6))(react@19.2.6)
-      expo-web-browser: 55.0.15(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.7)(react@19.2.6))
+      expo-web-browser: 55.0.17(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.7)(react@19.2.6))
       invariant: 2.2.4
       react: 19.2.6
       react-native: 0.84.1(@babel/core@7.29.7)(react@19.2.6)
@@ -6172,7 +6178,12 @@ snapshots:
 
   expo-server@55.0.11: {}
 
-  expo-web-browser@55.0.15(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.7)(react@19.2.6)):
+  expo-web-browser@55.0.17(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.7)(react@19.2.6)):
+    dependencies:
+      expo: 55.0.7(@babel/core@7.29.7)(@expo/dom-webview@55.0.3)(react-native@0.84.1(@babel/core@7.29.7)(react@19.2.6))(react@19.2.6)(typescript@5.9.3)
+      react-native: 0.84.1(@babel/core@7.29.7)(react@19.2.6)
+
+  expo-web-browser@57.0.0(expo@55.0.7)(react-native@0.84.1(@babel/core@7.29.7)(react@19.2.6)):
     dependencies:
       expo: 55.0.7(@babel/core@7.29.7)(@expo/dom-webview@55.0.3)(react-native@0.84.1(@babel/core@7.29.7)(react@19.2.6))(react@19.2.6)(typescript@5.9.3)
       react-native: 0.84.1(@babel/core@7.29.7)(react@19.2.6)
