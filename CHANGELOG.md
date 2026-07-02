@@ -1,5 +1,11 @@
 # authkit-react-native
 
+## 0.1.3
+
+### Patch Changes
+
+- [#43](https://github.com/joshuabaker/authkit-react-native/pull/43) [`469d67d`](https://github.com/joshuabaker/authkit-react-native/commit/469d67d3e2ece341cb033f204b48a24cba4970e2) Thanks [@joshuabaker](https://github.com/joshuabaker)! - Fix random logouts on unstable network connections. Token refresh failures now only clear the session when the server rejects the refresh token (`TokenError`, e.g. `invalid_grant`); transient failures such as network errors keep the session intact so a later call can retry, and return the stored access token when it is still fresh. Concurrent `getAccessToken()` calls now share a single in-flight refresh, preventing parallel refreshes from racing on the single-use refresh token and signing the user out. `signOut()` now always clears the local session even if the revocation request fails offline.
+
 ## 0.1.2
 
 ### Patch Changes
