@@ -84,6 +84,7 @@ Examples are self-contained with their own `package.json`. They duplicate server
 - **Peer dependencies only**: All Expo modules and Zustand are peer deps. The package has zero direct dependencies.
 - **`emptySession` constant**: Used in `signOut`, `getAccessToken` (no-token path), and `getAccessToken` (server-rejection path) to clear auth state consistently.
 - **Network errors don't clear the session**: `getAccessToken` only signs the user out when the server rejects the refresh (`TokenError`, e.g. `invalid_grant`). Transient failures (offline, server hiccups) keep tokens and state so a later call retries — returning the stored access token if still fresh. Conversely, `signOut` treats revocation as best-effort and always clears locally, even offline.
+- **Single-flight refresh**: concurrent `getAccessToken` calls share one in-flight refresh request. WorkOS refresh tokens are single-use, so parallel refreshes would race and the loser's `invalid_grant` would be indistinguishable from a revoked session.
 
 ## Build
 

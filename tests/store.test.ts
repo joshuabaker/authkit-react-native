@@ -434,6 +434,61 @@ describe("getAccessToken", () => {
     expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
   });
 
+  it("dedupes concurrent refreshes into a single request (single-flight)", async () => {
+    authMocks.refreshTokenPerformAsync.mockResolvedValue(fakeTokenResult());
+    await seedTokens();
+
+    const store = await createStoreAndWait();
+    vi.clearAllMocks();
+
+    await seedTokens({ accessToken: "old-token" });
+    authMocks.shouldRefresh.mockReturnValue(true);
+
+    // Keep the refresh pending so both calls overlap in flight
+    let resolveRefresh!: (value: unknown) => void;
+    authMocks.refreshTokenPerformAsync.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRefresh = resolve;
+      }),
+    );
+
+    const first = store.getState().getAccessToken();
+    const second = store.getState().getAccessToken();
+    // Let both calls reach the refresh branch before resolving
+    await vi.waitFor(() => {
+      expect(authMocks.refreshTokenPerformAsync).toHaveBeenCalled();
+    });
+    resolveRefresh(fakeTokenResult({ accessToken: "deduped-token" }));
+
+    expect(await first).toBe("deduped-token");
+    expect(await second).toBe("deduped-token");
+    expect(authMocks.refreshTokenPerformAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts a fresh refresh after a failed one (in-flight promise resets)", async () => {
+    authMocks.refreshTokenPerformAsync.mockResolvedValue(fakeTokenResult());
+    await seedTokens();
+
+    const store = await createStoreAndWait();
+    vi.clearAllMocks();
+
+    await seedTokens({ accessToken: "old-token" });
+    authMocks.shouldRefresh.mockReturnValue(true);
+    authMocks.refreshTokenPerformAsync.mockRejectedValueOnce(
+      new Error("Network request failed"),
+    );
+    authMocks.refreshTokenPerformAsync.mockResolvedValueOnce(
+      fakeTokenResult({ accessToken: "recovered-token" }),
+    );
+
+    const failed = await store.getState().getAccessToken();
+    expect(failed).toBeNull();
+
+    const recovered = await store.getState().getAccessToken();
+    expect(recovered).toBe("recovered-token");
+    expect(authMocks.refreshTokenPerformAsync).toHaveBeenCalledTimes(2);
+  });
+
   it("logs error in devMode", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
