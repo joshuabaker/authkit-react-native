@@ -4,6 +4,7 @@ import {
   makeRedirectUri,
   RefreshTokenRequest,
   RevokeTokenRequest,
+  TokenError,
   TokenResponse,
 } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
@@ -129,22 +130,28 @@ export function createAuthStore(config: AuthConfig) {
     },
 
     signOut: async () => {
-      const tokenResponse = await readTokenResponse();
-      if (tokenResponse?.accessToken) {
-        const revokeTokenRequest = new RevokeTokenRequest({
-          clientId,
-          token: tokenResponse.accessToken,
-        });
-        await revokeTokenRequest.performAsync({ revocationEndpoint });
+      try {
+        const tokenResponse = await readTokenResponse();
+        if (tokenResponse?.accessToken) {
+          const revokeTokenRequest = new RevokeTokenRequest({
+            clientId,
+            token: tokenResponse.accessToken,
+          });
+          await revokeTokenRequest.performAsync({ revocationEndpoint });
+        }
+      } catch (error) {
+        // Revocation is best-effort (e.g. offline) — always clear locally
+        if (devMode) console.error(error);
+      } finally {
+        await storage.clear();
+        set(emptySession);
       }
-      await storage.clear();
-      set(emptySession);
     },
 
     getAccessToken: async (options) => {
       const forceRefresh = options?.forceRefresh ?? false;
       try {
-        let tokenResponse = await readTokenResponse();
+        const tokenResponse = await readTokenResponse();
 
         if (!tokenResponse) {
           await storage.clear();
@@ -153,17 +160,30 @@ export function createAuthStore(config: AuthConfig) {
         }
 
         if (forceRefresh || tokenResponse.shouldRefresh()) {
-          const refreshTokenRequest = new RefreshTokenRequest({
-            refreshToken: tokenResponse.refreshToken,
-            clientId,
-          });
+          try {
+            const refreshTokenRequest = new RefreshTokenRequest({
+              refreshToken: tokenResponse.refreshToken,
+              clientId,
+            });
 
-          tokenResponse = await refreshTokenRequest.performAsync({
-            tokenEndpoint,
-          });
+            const refreshed = await refreshTokenRequest.performAsync({
+              tokenEndpoint,
+            });
 
-          const meta = await storeTokenResponse(tokenResponse);
-          set(meta);
+            const meta = await storeTokenResponse(refreshed);
+            set(meta);
+            return refreshed.accessToken;
+          } catch (error) {
+            // Only an OAuth rejection (e.g. revoked refresh token) means the
+            // session is dead. Transient failures — no network, server
+            // hiccups — must not sign the user out; keep the session so a
+            // later call can retry the refresh.
+            if (error instanceof TokenError) throw error;
+            if (devMode) console.error(error);
+            return TokenResponse.isTokenFresh(tokenResponse)
+              ? tokenResponse.accessToken
+              : null;
+          }
         }
 
         return tokenResponse.accessToken;

@@ -6,6 +6,7 @@ import {
   __defaults as authMocks,
   __lastInstance,
   AuthRequest,
+  TokenError,
 } from "./mocks/expo-auth-session";
 import * as WebBrowser from "./mocks/expo-web-browser";
 import * as SecureStore from "./mocks/expo-secure-store";
@@ -59,6 +60,7 @@ function resetAllMocks() {
   authMocks.refreshTokenPerformAsync.mockReset();
   authMocks.revokeTokenPerformAsync.mockReset();
   authMocks.shouldRefresh.mockReset().mockReturnValue(false);
+  authMocks.isTokenFresh.mockReset().mockReturnValue(false);
   authMocks.codeVerifier = "test-code-verifier";
 }
 
@@ -266,6 +268,30 @@ describe("signOut", () => {
     expect(SecureStore.deleteItemAsync).toHaveBeenCalled();
     expect(store.getState().user).toBeUndefined();
   });
+
+  it("clears local session even when revocation fails (offline)", async () => {
+    authMocks.refreshTokenPerformAsync.mockResolvedValue(fakeTokenResult());
+    await AsyncStorage.setItem(
+      "workos.meta",
+      JSON.stringify({ user: fakeUser }),
+    );
+    await seedTokens();
+
+    const store = await createStoreAndWait();
+    expect(store.getState().user).toEqual(fakeUser);
+
+    await seedTokens();
+    vi.clearAllMocks();
+    authMocks.revokeTokenPerformAsync.mockRejectedValue(
+      new Error("Network request failed"),
+    );
+
+    await expect(store.getState().signOut()).resolves.toBeUndefined();
+
+    expect(SecureStore.deleteItemAsync).toHaveBeenCalled();
+    expect(AsyncStorage.removeItem).toHaveBeenCalled();
+    expect(store.getState().user).toBeUndefined();
+  });
 });
 
 describe("getAccessToken", () => {
@@ -336,22 +362,76 @@ describe("getAccessToken", () => {
     expect(authMocks.refreshTokenPerformAsync).toHaveBeenCalled();
   });
 
-  it("catches refresh error, clears storage, returns null", async () => {
+  it("clears storage and state when refresh is rejected by the server (TokenError)", async () => {
     authMocks.refreshTokenPerformAsync.mockResolvedValue(fakeTokenResult());
+    await AsyncStorage.setItem(
+      "workos.meta",
+      JSON.stringify({ user: fakeUser }),
+    );
     await seedTokens();
 
     const store = await createStoreAndWait();
+    expect(store.getState().user).toEqual(fakeUser);
     vi.clearAllMocks();
 
     await seedTokens({ accessToken: "old-token" });
     authMocks.shouldRefresh.mockReturnValue(true);
     authMocks.refreshTokenPerformAsync.mockRejectedValue(
-      new Error("refresh failed"),
+      new TokenError({ error: "invalid_grant" }),
     );
 
     const token = await store.getState().getAccessToken();
     expect(token).toBeNull();
     expect(store.getState().user).toBeUndefined();
+    expect(SecureStore.deleteItemAsync).toHaveBeenCalled();
+  });
+
+  it("keeps session when refresh fails with a network error", async () => {
+    authMocks.refreshTokenPerformAsync.mockResolvedValue(fakeTokenResult());
+    await AsyncStorage.setItem(
+      "workos.meta",
+      JSON.stringify({ user: fakeUser }),
+    );
+    await seedTokens();
+
+    const store = await createStoreAndWait();
+    expect(store.getState().user).toEqual(fakeUser);
+    vi.clearAllMocks();
+
+    await seedTokens({ accessToken: "old-token" });
+    authMocks.shouldRefresh.mockReturnValue(true);
+    authMocks.refreshTokenPerformAsync.mockRejectedValue(
+      new Error("Network request failed"),
+    );
+
+    const token = await store.getState().getAccessToken();
+    expect(token).toBeNull(); // stored token is stale (isTokenFresh false)
+    expect(store.getState().user).toEqual(fakeUser); // still signed in
+    expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
+    expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
+  });
+
+  it("returns the stored token when refresh fails offline but token is still fresh", async () => {
+    authMocks.refreshTokenPerformAsync.mockResolvedValue(fakeTokenResult());
+    await AsyncStorage.setItem(
+      "workos.meta",
+      JSON.stringify({ user: fakeUser }),
+    );
+    await seedTokens();
+
+    const store = await createStoreAndWait();
+    vi.clearAllMocks();
+
+    await seedTokens({ accessToken: "still-valid-token" });
+    authMocks.refreshTokenPerformAsync.mockRejectedValue(
+      new Error("Network request failed"),
+    );
+    authMocks.isTokenFresh.mockReturnValue(true);
+
+    const token = await store.getState().getAccessToken({ forceRefresh: true });
+    expect(token).toBe("still-valid-token");
+    expect(store.getState().user).toEqual(fakeUser);
+    expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
   });
 
   it("logs error in devMode", async () => {
