@@ -4,6 +4,7 @@ import {
   makeRedirectUri,
   RefreshTokenRequest,
   RevokeTokenRequest,
+  TokenError,
   TokenResponse,
 } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
@@ -79,102 +80,144 @@ export function createAuthStore(config: AuthConfig) {
     return meta;
   }
 
-  const store = createStore<AuthState>()((set) => ({
-    isLoading: true,
+  const store = createStore<AuthState>()((set) => {
+    // Single-flight refresh: concurrent getAccessToken calls share one
+    // in-flight request. WorkOS refresh tokens are single-use, so parallel
+    // refreshes race and the loser's invalid_grant is indistinguishable
+    // from a revoked session.
+    let refreshInFlight: Promise<string> | null = null;
 
-    signIn: async ({ screenHint = "sign-in" } = {}) => {
-      const authSessionRequest = new AuthRequest({
-        clientId,
-        redirectUri,
-        extraParams: { provider: "authkit", screen_hint: screenHint },
-      });
+    function refreshSession(tokenResponse: TokenResponse): Promise<string> {
+      if (!refreshInFlight) {
+        refreshInFlight = (async () => {
+          try {
+            const refreshTokenRequest = new RefreshTokenRequest({
+              refreshToken: tokenResponse.refreshToken,
+              clientId,
+            });
 
-      const authSessionResult = await authSessionRequest.promptAsync({
-        authorizationEndpoint,
-      });
+            const refreshed = await refreshTokenRequest.performAsync({
+              tokenEndpoint,
+            });
 
-      if (authSessionResult.type === "error") {
-        throw new Error(
-          authSessionResult.error?.description ?? "Unknown error",
-        );
+            const meta = await storeTokenResponse(refreshed);
+            set(meta);
+            return refreshed.accessToken;
+          } finally {
+            refreshInFlight = null;
+          }
+        })();
       }
+      return refreshInFlight;
+    }
 
-      if (authSessionResult.type !== "success") {
-        // User cancelled
-        return false;
-      }
+    return {
+      isLoading: true,
 
-      if (authSessionRequest.state !== authSessionResult.params.state) {
-        throw new Error("State mismatch");
-      }
-
-      if (!authSessionRequest.codeVerifier) {
-        throw new Error("Code verifier missing");
-      }
-
-      const tokenRequest = new AccessTokenRequest({
-        code: authSessionResult.params.code,
-        clientId,
-        redirectUri,
-        extraParams: {
-          code_verifier: authSessionRequest.codeVerifier,
-        },
-      });
-
-      const tokenResponse = await tokenRequest.performAsync({ tokenEndpoint });
-      const meta = await storeTokenResponse(tokenResponse);
-      set(meta);
-
-      return true;
-    },
-
-    signOut: async () => {
-      const tokenResponse = await readTokenResponse();
-      if (tokenResponse?.accessToken) {
-        const revokeTokenRequest = new RevokeTokenRequest({
+      signIn: async ({ screenHint = "sign-in" } = {}) => {
+        const authSessionRequest = new AuthRequest({
           clientId,
-          token: tokenResponse.accessToken,
+          redirectUri,
+          extraParams: { provider: "authkit", screen_hint: screenHint },
         });
-        await revokeTokenRequest.performAsync({ revocationEndpoint });
-      }
-      await storage.clear();
-      set(emptySession);
-    },
 
-    getAccessToken: async (options) => {
-      const forceRefresh = options?.forceRefresh ?? false;
-      try {
-        let tokenResponse = await readTokenResponse();
+        const authSessionResult = await authSessionRequest.promptAsync({
+          authorizationEndpoint,
+        });
 
-        if (!tokenResponse) {
+        if (authSessionResult.type === "error") {
+          throw new Error(
+            authSessionResult.error?.description ?? "Unknown error",
+          );
+        }
+
+        if (authSessionResult.type !== "success") {
+          // User cancelled
+          return false;
+        }
+
+        if (authSessionRequest.state !== authSessionResult.params.state) {
+          throw new Error("State mismatch");
+        }
+
+        if (!authSessionRequest.codeVerifier) {
+          throw new Error("Code verifier missing");
+        }
+
+        const tokenRequest = new AccessTokenRequest({
+          code: authSessionResult.params.code,
+          clientId,
+          redirectUri,
+          extraParams: {
+            code_verifier: authSessionRequest.codeVerifier,
+          },
+        });
+
+        const tokenResponse = await tokenRequest.performAsync({
+          tokenEndpoint,
+        });
+        const meta = await storeTokenResponse(tokenResponse);
+        set(meta);
+
+        return true;
+      },
+
+      signOut: async () => {
+        try {
+          const tokenResponse = await readTokenResponse();
+          if (tokenResponse?.accessToken) {
+            const revokeTokenRequest = new RevokeTokenRequest({
+              clientId,
+              token: tokenResponse.accessToken,
+            });
+            await revokeTokenRequest.performAsync({ revocationEndpoint });
+          }
+        } catch (error) {
+          // Revocation is best-effort (e.g. offline) — always clear locally
+          if (devMode) console.error(error);
+        } finally {
+          await storage.clear();
+          set(emptySession);
+        }
+      },
+
+      getAccessToken: async (options) => {
+        const forceRefresh = options?.forceRefresh ?? false;
+        try {
+          const tokenResponse = await readTokenResponse();
+
+          if (!tokenResponse) {
+            await storage.clear();
+            set(emptySession);
+            return null;
+          }
+
+          if (forceRefresh || tokenResponse.shouldRefresh()) {
+            try {
+              return await refreshSession(tokenResponse);
+            } catch (error) {
+              // Only an OAuth rejection (e.g. revoked refresh token) means the
+              // session is dead. Transient failures — no network, server
+              // hiccups — must not sign the user out; keep the session so a
+              // later call can retry the refresh.
+              if (error instanceof TokenError) throw error;
+              if (devMode) console.error(error);
+              return TokenResponse.isTokenFresh(tokenResponse)
+                ? tokenResponse.accessToken
+                : null;
+            }
+          }
+
+          return tokenResponse.accessToken;
+        } catch (error) {
+          if (devMode) console.error(error);
           await storage.clear();
           set(emptySession);
           return null;
         }
-
-        if (forceRefresh || tokenResponse.shouldRefresh()) {
-          const refreshTokenRequest = new RefreshTokenRequest({
-            refreshToken: tokenResponse.refreshToken,
-            clientId,
-          });
-
-          tokenResponse = await refreshTokenRequest.performAsync({
-            tokenEndpoint,
-          });
-
-          const meta = await storeTokenResponse(tokenResponse);
-          set(meta);
-        }
-
-        return tokenResponse.accessToken;
-      } catch (error) {
-        if (devMode) console.error(error);
-        await storage.clear();
-        set(emptySession);
-        return null;
-      }
-    },
-  }));
+      },
+    };
+  });
 
   // Auto-restore session on creation
   (async () => {

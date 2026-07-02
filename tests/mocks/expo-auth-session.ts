@@ -18,8 +18,18 @@ export const __defaults = {
   refreshTokenPerformAsync: vi.fn(),
   revokeTokenPerformAsync: vi.fn(),
   shouldRefresh: vi.fn().mockReturnValue(false),
+  isTokenFresh: vi.fn().mockReturnValue(false),
   codeVerifier: "test-code-verifier" as string | undefined,
 };
+
+export class TokenError extends Error {
+  code: string;
+
+  constructor(params: { error: string; error_description?: string }) {
+    super(params.error_description ?? params.error);
+    this.code = params.error;
+  }
+}
 
 export class AuthRequest {
   state = "test-state";
@@ -88,5 +98,9 @@ export class TokenResponse {
 
   shouldRefresh() {
     return __defaults.shouldRefresh();
+  }
+
+  static isTokenFresh(token: unknown) {
+    return __defaults.isTokenFresh(token);
   }
 }
