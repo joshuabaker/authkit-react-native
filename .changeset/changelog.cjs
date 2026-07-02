@@ -1,58 +1,77 @@
 // Resilient changelog generator for Changesets.
 //
-// Uses @changesets/changelog-github for rich entries (PR links + "Thanks
-// @author"), but if GitHub's GraphQL API fails during `changeset version`
-// (e.g. the intermittent "Premature close" error), it falls back to a plain
-// entry built from the changeset summary — so a GitHub API hiccup degrades a
-// changelog line instead of failing the whole release.
+// Delegates to @changesets/changelog-github, but retries its GitHub GraphQL
+// call with exponential backoff to ride out transient failures (e.g. the
+// intermittent "Failed to parse data from GitHub … Premature close" error).
+// @changesets/get-github-info's DataLoader clears a failed batch's keys, so
+// each retry genuinely re-fetches. If every attempt fails, the error is
+// re-thrown so the release fails loudly rather than shipping a degraded
+// changelog — we don't want to silently drop the PR/author links.
+//
+// Tunable via env: CHANGELOG_MAX_ATTEMPTS, CHANGELOG_RETRY_BASE_MS,
+// CHANGELOG_RETRY_MAX_MS.
 
 const changelogGithub = require("@changesets/changelog-github");
 
 const github = changelogGithub.default || changelogGithub;
 
-function plainReleaseLine(changeset) {
-  const [firstLine, ...rest] = changeset.summary
-    .split("\n")
-    .map((line) => line.trimEnd());
-  let line = `\n- ${firstLine}`;
-  const continuation = rest.filter(Boolean);
-  if (continuation.length > 0) {
-    line += `\n${continuation.map((l) => `  ${l}`).join("\n")}`;
+const MAX_ATTEMPTS = Math.max(
+  1,
+  Number(process.env.CHANGELOG_MAX_ATTEMPTS) || 6,
+);
+const BASE_DELAY_MS = Math.max(
+  0,
+  Number(process.env.CHANGELOG_RETRY_BASE_MS) || 2000,
+);
+const MAX_DELAY_MS = Math.max(
+  BASE_DELAY_MS,
+  Number(process.env.CHANGELOG_RETRY_MAX_MS) || 60000,
+);
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const firstLineOf = (error) =>
+  error && error.message ? String(error.message).split("\n")[0] : String(error);
+
+async function withRetry(label, run) {
+  let lastError;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await run();
+    } catch (error) {
+      lastError = error;
+      if (attempt === MAX_ATTEMPTS) break;
+      const delay = Math.min(MAX_DELAY_MS, BASE_DELAY_MS * 2 ** (attempt - 1));
+      console.error(
+        `[changelog] ${label} failed (attempt ${attempt}/${MAX_ATTEMPTS}): ${firstLineOf(
+          error,
+        )} — retrying in ${delay}ms`,
+      );
+      await sleep(delay);
+    }
   }
-  return line;
+  const summary = `[changelog] ${label} failed after ${MAX_ATTEMPTS} attempts (GitHub API unreachable?): ${firstLineOf(
+    lastError,
+  )}`;
+  if (process.env.GITHUB_ACTIONS) {
+    console.error(`::error::${summary}`);
+  }
+  throw lastError instanceof Error ? lastError : new Error(summary);
 }
 
 module.exports = {
-  async getReleaseLine(changeset, type, changelogOpts) {
-    try {
-      return await github.getReleaseLine(changeset, type, changelogOpts);
-    } catch (err) {
-      console.error(
-        `[changelog] @changesets/changelog-github failed (${
-          err && err.message
-        }); falling back to a plain changelog entry.`,
-      );
-      return plainReleaseLine(changeset);
-    }
+  getReleaseLine(changeset, type, changelogOpts) {
+    return withRetry("getReleaseLine", () =>
+      github.getReleaseLine(changeset, type, changelogOpts),
+    );
   },
-  async getDependencyReleaseLine(
-    changesets,
-    dependenciesUpdated,
-    changelogOpts,
-  ) {
-    try {
-      return await github.getDependencyReleaseLine(
+  getDependencyReleaseLine(changesets, dependenciesUpdated, changelogOpts) {
+    return withRetry("getDependencyReleaseLine", () =>
+      github.getDependencyReleaseLine(
         changesets,
         dependenciesUpdated,
         changelogOpts,
-      );
-    } catch (err) {
-      console.error(
-        `[changelog] @changesets/changelog-github dependency line failed (${
-          err && err.message
-        }); omitting dependency details.`,
-      );
-      return "";
-    }
+      ),
+    );
   },
 };
