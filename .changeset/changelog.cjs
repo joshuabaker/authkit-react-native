@@ -17,7 +17,7 @@ const github = changelogGithub.default || changelogGithub;
 
 const MAX_ATTEMPTS = Math.max(
   1,
-  Number(process.env.CHANGELOG_MAX_ATTEMPTS) || 6,
+  Number(process.env.CHANGELOG_MAX_ATTEMPTS) || 5,
 );
 const BASE_DELAY_MS = Math.max(
   0,
@@ -25,7 +25,7 @@ const BASE_DELAY_MS = Math.max(
 );
 const MAX_DELAY_MS = Math.max(
   BASE_DELAY_MS,
-  Number(process.env.CHANGELOG_RETRY_MAX_MS) || 60000,
+  Number(process.env.CHANGELOG_RETRY_MAX_MS) || 16000,
 );
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
