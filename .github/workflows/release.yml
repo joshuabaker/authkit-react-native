@@ -25,8 +25,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
-      # Trusted publishing requires npm >= 11.5.1; Node 22's bundled npm is 10.x
-      - run: npm install -g npm@latest
+      # Trusted publishing requires npm >= 11.5.1; Node 22's bundled npm is 10.x.
+      # Pinned to npm 11 (not @latest): npm 12 changed `npm view --json` to output
+      # an array, which breaks @changesets/cli's already-published check — it then
+      # tries to republish existing versions and fails with EPUBLISHCONFLICT.
+      # Unpin once changesets ships npm 12 support.
+      - run: npm install -g npm@11
 
       - name: Create release PR or publish
         uses: changesets/action@v1
