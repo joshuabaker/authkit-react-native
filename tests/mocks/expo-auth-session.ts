@@ -83,8 +83,7 @@ export class TokenResponse {
     this.accessToken = (config.accessToken as string) ?? "access-token";
     this.refreshToken = (config.refreshToken as string) ?? "refresh-token";
     this.rawResponse = config.rawResponse as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
     __lastInstance.tokenResponse = this;
   }
 
