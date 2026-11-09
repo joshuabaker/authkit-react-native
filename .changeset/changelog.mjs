@@ -11,7 +11,7 @@
 // Tunable via env: CHANGELOG_MAX_ATTEMPTS, CHANGELOG_RETRY_BASE_MS,
 // CHANGELOG_RETRY_MAX_MS.
 
-const changelogGithub = require("@changesets/changelog-github");
+import * as changelogGithub from "@changesets/changelog-github";
 
 const github = changelogGithub.default || changelogGithub;
 
@@ -59,7 +59,7 @@ async function withRetry(label, run) {
   throw lastError instanceof Error ? lastError : new Error(summary);
 }
 
-module.exports = {
+export default {
   getReleaseLine(changeset, type, changelogOpts) {
     return withRetry("getReleaseLine", () =>
       github.getReleaseLine(changeset, type, changelogOpts),
