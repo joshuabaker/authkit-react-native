@@ -1,14 +1,17 @@
 name: Dependabot Auto-Merge
 
-on: pull_request_target
+# `pull_request`, not `pull_request_target`: GitHub blocks `pull_request_target`
+# by default in public repos from 2026-12-02. Dependabot-triggered runs only see
+# Dependabot secrets, so PAT_TOKEN must also be stored as a Dependabot secret.
+on: pull_request
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
 
 jobs:
   auto-merge:
-    if: github.actor == 'dependabot[bot]'
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'joshuabaker/authkit-react-native'
     runs-on: ubuntu-latest
     steps:
       - name: Fetch dependabot metadata
@@ -17,6 +20,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      # Merged with a PAT (not GITHUB_TOKEN) so the merge triggers push workflows on main
       - name: Auto-merge minor and patch updates
         if: steps.metadata.outputs.update-type != 'version-update:semver-major'
         env:
