@@ -1,5 +1,11 @@
 # authkit-react-native
 
+## 0.1.5
+
+### Patch Changes
+
+- [#67](https://github.com/joshuabaker/authkit-react-native/pull/67) [`00713c2`](https://github.com/joshuabaker/authkit-react-native/commit/00713c2c81eb3b87a7de3863905ffeb2bdbebbb6) Thanks [@joshuabaker](https://github.com/joshuabaker)! - Patch vulnerable development and build-time dependencies. No runtime or API changes.
+
 ## 0.1.4
 
 ### Patch Changes
