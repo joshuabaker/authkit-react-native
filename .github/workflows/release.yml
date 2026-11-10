@@ -31,9 +31,9 @@ jobs:
       - name: Create release PR or publish
         uses: changesets/action@v2
         with:
-          publish: pnpm changeset publish
-          title: "chore: version package"
-          commit: "chore: version package"
-        env:
-          # npm auth is via OIDC trusted publishing; GITHUB_TOKEN (PAT) is only for Changesets' git ops
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          publish-script: pnpm changeset publish
+          pr-title: "chore: version package"
+          commit-message: "chore: version package"
+          # npm auth is via OIDC trusted publishing. The PAT is only for Changesets'
+          # pushes, PR and releases, so release-PR pushes trigger CI (GITHUB_TOKEN pushes don't).
+          github-token: ${{ secrets.PAT_TOKEN }}
