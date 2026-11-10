@@ -4,6 +4,13 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # One PR for all minor/patch bumps. Parallel PRs each rewrite pnpm-lock.yaml,
+    # and merging them back to back corrupted the lockfile (#55).
+    groups:
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch
   - package-ecosystem: github-actions
     directory: /
     schedule:
