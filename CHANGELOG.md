@@ -1,5 +1,13 @@
 # authkit-react-native
 
+## 0.1.4
+
+### Patch Changes
+
+- [#64](https://github.com/joshuabaker/authkit-react-native/pull/64) [`4cad781`](https://github.com/joshuabaker/authkit-react-native/commit/4cad78116833794752c82c77290ee0a4c1496658) Thanks [@joshuabaker](https://github.com/joshuabaker)! - Run Dependabot auto-merge on `pull_request` instead of `pull_request_target`, ahead of GitHub blocking `pull_request_target` by default in public repositories. No runtime or API changes.
+
+- [#63](https://github.com/joshuabaker/authkit-react-native/pull/63) [`8a22c88`](https://github.com/joshuabaker/authkit-react-native/commit/8a22c88a5592cfe7ae8ff73ef8e087a0fc20e716) Thanks [@joshuabaker](https://github.com/joshuabaker)! - Repair the lockfile, patch vulnerable development dependencies, and upgrade Changesets to v3 so releases work with npm 12. No runtime or API changes.
+
 ## 0.1.3
 
 ### Patch Changes
